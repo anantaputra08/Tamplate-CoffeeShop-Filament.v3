@@ -27,4 +27,17 @@ class Category extends Model
             }
         });
     }
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
+    public function scopeActive($query)
+    {
+        return $query->where('deleted_at', null);
+    }
+    public function scopeWithProductsCount($query)
+    {
+        return $query->withCount('products');
+    }
+    
 }
