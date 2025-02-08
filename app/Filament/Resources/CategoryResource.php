@@ -17,7 +17,8 @@ use Illuminate\Support\Str;
 class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
-    protected static ?string $navigationIcon = 'heroicon-s-inbox-stack';
+    protected static ?string $navigationGroup = 'Product Manage';
+    protected static ?string $navigationIcon = 'heroicon-m-tag';
     public static function form(Form $form): Form
     {
         return $form

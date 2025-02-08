@@ -25,16 +25,20 @@ class ListCategories extends ListRecords
             'all' => Tab::make()
                 ->modifyQueryUsing(fn(Builder $query) => $query->withTrashed())
                 ->badge(Category::withTrashed()->count()),
-    
+
             'active' => Tab::make()
                 ->modifyQueryUsing(fn(Builder $query) => $query->withoutTrashed())
                 ->badge(Category::withoutTrashed()->count())
                 ->badgeColor('success'),
-    
+
             'deleted' => Tab::make()
                 ->modifyQueryUsing(fn(Builder $query) => $query->onlyTrashed())
                 ->badge(Category::onlyTrashed()->count())
                 ->badgeColor('danger'),
         ];
+    }
+    public function getDefaultActiveTab(): string|int|null
+    {
+        return 'active';
     }
 }
