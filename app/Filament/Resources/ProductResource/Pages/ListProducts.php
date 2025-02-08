@@ -42,4 +42,8 @@ class ListProducts extends ListRecords
                 ->badgeColor('danger'),
         ];
     }
+    public function getDefaultActiveTab(): string|int|null
+    {
+        return 'active';
+    }
 }
