@@ -120,6 +120,10 @@ class TransactionResource extends Resource
                     ->afterStateUpdated(
                         fn($state, callable $set, callable $get) =>
                         self::updateTotalPrice($set, $get)
+                    )
+                    ->afterStateHydrated(
+                        fn(callable $set, callable $get) =>
+                        self::mergeDuplicateItems($set, $get)
                     ),
 
                 Forms\Components\Select::make('payment_type')
@@ -175,6 +179,44 @@ class TransactionResource extends Resource
         $set('gross_amount', $items->sum());
     }
 
+    public static function mergeDuplicateItems(callable $set, callable $get)
+    {
+        $items = collect($get('items') ?? []);
+        $mergedItems = collect();
+
+        $items->each(function ($item) use ($mergedItems) {
+            $existingItemKey = $mergedItems->search(function ($existingItem) use ($item) {
+                return $existingItem['product_id'] === $item['product_id'] &&
+                    $existingItem['sugar_level'] === $item['sugar_level'] &&
+                    $existingItem['iced_level'] === $item['iced_level'] &&
+                    $existingItem['take_away'] === $item['take_away'];
+            });
+
+            if ($existingItemKey !== false) {
+                $mergedItems->transform(function ($existingItem, $key) use ($item, $existingItemKey) {
+                    if ($key === $existingItemKey) {
+                        $existingItem['quantity'] += $item['quantity'];
+                    }
+                    return $existingItem;
+                });
+            } else {
+                $mergedItems->push($item);
+            }
+        });
+
+        $set('items', $mergedItems->toArray());
+
+        // Update item prices after merging
+        $mergedItems->each(function ($item, $index) use ($set, $get) {
+            $productPrice = \App\Models\Product::find($item['product_id'])?->price ?? 0;
+            $quantity = $item['quantity'] ?? 1;
+            $totalItemPrice = $productPrice * $quantity;
+            $set("items.$index.price", $totalItemPrice);
+        });
+
+        self::updateTotalPrice($set, $get);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -225,6 +267,21 @@ class TransactionResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('klickToPayment')
+                    ->label('Klick to Payment')
+                    ->icon('heroicon-o-check-circle')
+                    ->requiresConfirmation()
+                    ->color('info')
+                    ->visible(fn($record) => $record->status === 'pending' && $record->payment_type === 'bank_transfer')
+                    ->action(function ($record) {
+                        $record->update(['status' => 'processing']);
+
+                        Notification::make()
+                            ->title('Status Updated')
+                            ->body('The status has been marked as processing.')
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\Action::make('markAsProcessing')
                     ->label('Mark as Processing')
                     ->icon('heroicon-o-check-circle')
@@ -255,22 +312,6 @@ class TransactionResource extends Resource
                             ->success()
                             ->send();
                     }),
-                // Tables\Actions\Action::make('detail')
-                //     ->modalContent(
-                //         fn(Transaction $record) => view('filament.pages.transaction.detail', compact('record'))
-                //     )
-                //     ->modalSubmitAction(
-                //         function (Transaction $record) {
-                //             $record->update(['status' => 'completed']);
-                //             Notification::make()
-                //                 ->title('Transaction Updated')
-                //                 ->body('The transaction status has been marked as completed.')
-                //                 ->success()
-                //                 ->send();
-
-                //             return null; // Ensure the return type is correct
-                //         }
-                //     ),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),

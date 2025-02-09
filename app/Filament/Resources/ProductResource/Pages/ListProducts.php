@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources\ProductResource\Pages;
 
+use App\Filament\Exports\ProductExporter;
 use App\Filament\Resources\ProductResource;
 use App\Models\Product;
 use Filament\Actions;
+use Filament\Actions\ExportAction;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
 use Illuminate\Database\Eloquent\Builder;

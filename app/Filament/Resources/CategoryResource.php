@@ -93,4 +93,5 @@ class CategoryResource extends Resource
                 SoftDeletingScope::class,
             ]);
     }
+    
 }
