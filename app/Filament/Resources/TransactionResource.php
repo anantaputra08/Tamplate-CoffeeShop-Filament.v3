@@ -68,6 +68,7 @@ class TransactionResource extends Resource
                                 Forms\Components\Select::make('product_id')
                                     ->label('Product')
                                     ->relationship('product', 'name')
+                                    ->searchable()
                                     ->required()
                                     ->reactive()
                                     ->afterStateUpdated(fn($state, callable $set, callable $get) => self::updateItemPrice($set, $get)),
