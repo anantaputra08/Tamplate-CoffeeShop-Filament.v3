@@ -14,10 +14,4 @@ class CreateTransaction extends CreateRecord
     {
         return $this->getResource()::getUrl('index');
     }
-
-    // protected function getCreatedNotification(): ?Notification
-    // {
-    //     return Notification::make('Transaction created!!')
-    //         ->flash();
-    // }
 }
