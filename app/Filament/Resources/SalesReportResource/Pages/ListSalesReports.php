@@ -19,8 +19,8 @@ class ListSalesReports extends ListRecords
                 ->color('success')
                 ->icon('heroicon-o-document-arrow-down')
                 ->action(function () {
-                    // Ambil data order yang difilter
-                    $orders = $this->getFilteredTableQuery()->get();
+                    // Ambil data transaction yang difilter
+                    $transactions = $this->getFilteredTableQuery()->with('items')->get();
 
                     // Store filter values in session if not available in request
                     $fromDate = session('from_date', request()->input('from_date'));
@@ -30,18 +30,19 @@ class ListSalesReports extends ListRecords
                     session(['from_date' => $fromDate, 'to_date' => $toDate]);
 
                     // Hitung total orders
-                    $totalOrders = $orders->count();
+                    $totalOrders = $transactions->count();
 
                     // Hitung total amount
-                    $totalAmount = $orders->sum('gross_amount');
+                    $totalAmount = $transactions->sum('gross_amount');
+
+                    // Hitung total items dari tabel `transaction_items`
+                    $totalItems = $transactions->sum(fn ($transaction) => $transaction->items->sum('quantity'));
 
                     // Buat PDF
-                    $pdf = Pdf::loadView('reports.sales', [
-                        'orders' => $orders,
-                        'total_sales' => $orders->sum('total_amount'),
-                        'total_items' => $orders->sum(function ($order) {
-                        return $order->items->sum('quantity');
-                    }),
+                    $pdf = Pdf::loadView('sales', [
+                        'transactions' => $transactions,
+                        'total_sales' => $totalAmount,
+                        'total_items' => $totalItems, // Tambahkan total item
                         'totalOrders' => $totalOrders,
                         'totalAmount' => $totalAmount,
                         'dateRange' => ['from' => $fromDate, 'to' => $toDate],
